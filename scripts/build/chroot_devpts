@@ -1,0 +1,94 @@
+#!/bin/sh
+
+## live-build(7) - System Build Scripts
+## Copyright (C) 2016-2025 The Debian Live team
+## Copyright (C) 2006-2015 Daniel Baumann <mail@daniel-baumann.ch>
+##
+## This program comes with ABSOLUTELY NO WARRANTY; for details see COPYING.
+## This is free software, and you are welcome to redistribute it
+## under certain conditions; see COPYING for details.
+
+
+set -e
+
+# Including common functions
+[ -e "${LIVE_BUILD}/scripts/build.sh" ] && . "${LIVE_BUILD}/scripts/build.sh" || . /usr/lib/live/build.sh
+
+# Setting static variables
+DESCRIPTION="Mount /dev"
+USAGE="${PROGRAM} {install|remove} [--force]"
+
+# Processing arguments and configuration files
+Init_config_data "${@}"
+
+_ACTION="${1}"
+shift
+
+# Requiring stage file
+Require_stagefiles config bootstrap
+
+case "${_ACTION}" in
+	install)
+		Echo_message "Begin mounting /dev..."
+
+		# Checking stage file
+		Check_stagefile
+
+		# Acquire lock file
+		Acquire_lockfile
+
+		# Creating mountpoint
+		mkdir -p chroot/dev/pts
+
+		# Mounting /dev/pts
+		mount -t devpts -o gid=5,mode=620,x-gvfs-hide devpts-live chroot/dev/pts || true
+
+		# Bind-mount other devices in /dev
+		for dev in null zero full random urandom tty console
+		do
+			# 1. nothing to be done if character device already exists
+			# 2. cannot bind-mount if device does not exist on the outside
+			if [ ! -c "chroot/dev/$dev" -a -e "/dev/$dev" ]
+			then
+				# Create an empty file if neccessary
+				if [ ! -e "chroot/dev/$dev" ]
+				then
+					touch "chroot/dev/$dev"
+				fi
+				mount -o bind "/dev/$dev" "chroot/dev/$dev"
+			fi
+		done
+
+		# Creating stage file
+		Create_stagefile
+		;;
+
+	remove)
+		Echo_message "Begin unmounting /dev..."
+
+		# Checking stage file
+		Ensure_stagefile_exists
+
+		# Acquire lock file
+		Acquire_lockfile
+
+		# Unmount and remove the devices in /dev
+		# (devtmpfs creates the devices upon booting)
+		for dev in pts null zero full random urandom tty console
+		do
+			if mountpoint -q "chroot/dev/$dev"
+			then
+				umount "chroot/dev/$dev"
+			fi
+		done
+		rm -fr chroot/dev/*
+
+		# Removing stage file
+		Remove_stagefile
+		;;
+
+	*)
+		Echo_error "Invalid action parameter: '${_ACTION}'"
+		Usage --fail
+		;;
+esac
