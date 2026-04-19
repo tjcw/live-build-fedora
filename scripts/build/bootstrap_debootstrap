@@ -21,15 +21,15 @@ USAGE="${PROGRAM} [--force]"
 # Processing arguments and configuration files
 Init_config_data "${@}"
 
-if ! command -v debootstrap >/dev/null
+if ! command -v supermin >/dev/null
 then
-	Echo_error "debootstrap - command not found"
+	Echo_error "supermin - command not found"
 	exit 1
 fi
 
 Echo_message "Begin bootstrapping system..."
 
-Check_package host /usr/sbin/debootstrap debootstrap
+Check_package host /usr/bin/supermin supermin
 Check_installed host /usr/bin/eatmydata eatmydata
 if [ "${INSTALL_STATUS}" -eq 0 ]
 then
@@ -96,8 +96,9 @@ then
 	fi
 
 	Print_breakage
-	Echo_message "Running debootstrap (download-only)..."
-	debootstrap ${DEBOOTSTRAP_OPTIONS} --download-only "${LB_PARENT_DISTRIBUTION_CHROOT}" chroot "${LB_PARENT_MIRROR_BOOTSTRAP}" ${DEBOOTSTRAP_SCRIPT}
+	Echo_message "Running supermin (download-only)..."
+	set +x
+	supermin ${DEBOOTSTRAP_OPTIONS} --download-only "${LB_PARENT_DISTRIBUTION_CHROOT}" chroot "${LB_PARENT_MIRROR_BOOTSTRAP}" ${DEBOOTSTRAP_SCRIPT}
 
 	# Removing old cache
 	rm -f cache/packages.bootstrap/*.deb
@@ -122,9 +123,9 @@ if [ -n "${LB_BOOTSTRAP_QEMU_ARCHITECTURE}" ]; then
 	debootstrap ${DEBOOTSTRAP_OPTIONS} --foreign "${LB_PARENT_DISTRIBUTION_CHROOT}" chroot "${LB_PARENT_MIRROR_BOOTSTRAP}" ${DEBOOTSTRAP_SCRIPT}
 
 	Echo_message "Running debootstrap second stage under QEMU"
-	Chroot chroot /bin/sh /debootstrap/debootstrap --second-stage ${FOREIGN_DEBOOTSTRAP_OPTIONS}
+	Chroot chroot /bin/sh /supermin/supermin --second-stage ${FOREIGN_DEBOOTSTRAP_OPTIONS}
 else
-	${_EATMYDATA} debootstrap ${DEBOOTSTRAP_OPTIONS} "${LB_PARENT_DISTRIBUTION_CHROOT}" chroot "${LB_PARENT_MIRROR_BOOTSTRAP}" ${DEBOOTSTRAP_SCRIPT}
+	${_EATMYDATA} supermin ${DEBOOTSTRAP_OPTIONS} "${LB_PARENT_DISTRIBUTION_CHROOT}" chroot "${LB_PARENT_MIRROR_BOOTSTRAP}" ${DEBOOTSTRAP_SCRIPT}
 fi
 
 # If there's an os-release file, copy it to /etc/ and add some extra fields that identify the live image

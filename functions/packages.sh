@@ -128,7 +128,8 @@ Check_installed ()
 	else
 		if [ -e /etc/debian_version ]
 		then
-			if dpkg-query -s "${PACKAGE}" 2> /dev/null | grep -qs "Status: install"
+#			if dpkg-query -s "${PACKAGE}" 2> /dev/null | grep -qs "Status: install"
+			if rpm -q "${PACKAGE}" 
 			then
 				INSTALL_STATUS=0
 			else

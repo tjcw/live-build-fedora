@@ -126,7 +126,7 @@ Prepare_config ()
 	LZMA_OPTIONS="${LZMA_OPTIONS:--6}"
 	XZ_OPTIONS="${XZ_OPTIONS:--6}"
 
-	if gzip --help | grep -qs "\-\-rsyncable"
+ 	if gzip --help | grep -qs -- "--rsyncable"
 	then
 		GZIP_OPTIONS="$(echo ${GZIP_OPTIONS} | sed -E -e 's|[ ]?--rsyncable||') --rsyncable"
 	fi
